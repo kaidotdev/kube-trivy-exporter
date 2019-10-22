@@ -1,0 +1,46 @@
+name: Deploy
+on: [push]
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v1
+        with:
+          github_token: ${{ secrets.TOKEN }}
+          golangci_lint_flags: "--exclude-use-default=false"
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Test
+        run: go test ./... -race -bench . -benchmem
+  publish:
+    name: Publish
+    runs-on: ubuntu-18.04
+    needs: [lint, test]
+    env:
+      OWNER: kaidotdev
+      REPOSITORY_NAME: kube-trivy-exporter
+      IMAGE_NAME: kube-trivy-exporter
+      DOCKER_BUILDKIT: 1
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Publish
+        run: |
+          IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
+          TAG=$(git rev-parse --short HEAD)
+          docker build -t $IMAGE_PATH:$TAG .
+          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.TOKEN }}
+          docker push $IMAGE_PATH:$TAG

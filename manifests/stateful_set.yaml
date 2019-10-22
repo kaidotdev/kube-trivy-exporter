@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kube-trivy-exporter
+spec:
+  serviceName: kube-trivy-exporter
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: kube-trivy-exporter
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/schema: "http"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+      labels:
+        app: kube-trivy-exporter
+    spec:
+      serviceAccountName: kube-trivy-exporter
+      securityContext:
+        sysctls:
+          # https://github.com/kubernetes/kubernetes/pull/54896
+          #- name: net.core.somaxconn
+          #  value: "65535"
+          - name: net.ipv4.ip_local_port_range
+            value: "10000 65535"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - kube-trivy-exporter
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - name: kube-trivy-exporter
+          image: docker.pkg.github.com/kaidotdev/kube-trivy-exporter/kube-trivy-exporter:1249548
+          imagePullPolicy: Always
+          args:
+            - server
+            - --api-address=0.0.0.0:8000
+            - --monitor-address=0.0.0.0:9090
+            - --enable-tracing
+            - --trivy-concurrency=30
+            - --collector-loop-interval=3600
+          env:
+            - name: GOGC
+              value: "100"
+          ports:
+            - containerPort: 8000
+            - containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 1
+            successThreshold: 3
+            failureThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: cache
+              mountPath: /root/.cache/trivy
+  volumeClaimTemplates:
+    - metadata:
+        name: cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

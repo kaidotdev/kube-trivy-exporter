@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go run" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="true">
+    <module name="kube-trivy-exporter" />
+    <working_directory value="$PROJECT_DIR$" />
+    <go_parameters value="-i" />
+    <parameters value="server --enable-profiling" />
+    <envs>
+      <env name="PATH" value="/usr/bin:$PROJECT_DIR$/../google-cloud-sdk/bin" />
+    </envs>
+    <kind value="FILE" />
+    <filePath value="$PROJECT_DIR$/cmd/main.go" />
+    <package value="promhet" />
+    <directory value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
