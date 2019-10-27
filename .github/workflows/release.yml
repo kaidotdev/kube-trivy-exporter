@@ -1,0 +1,21 @@
+name: Release
+on: [release]
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-18.04
+    env:
+      OWNER: kaidotdev
+      REPOSITORY_NAME: kube-trivy-exporter
+      IMAGE_NAME: kube-trivy-exporter
+      DOCKER_BUILDKIT: 1
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Publish
+        run: |
+          IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
+          TAG=${GITHUB_REF##*/}
+          docker build -t $IMAGE_PATH:$TAG .
+          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.TOKEN }}
+          docker push $IMAGE_PATH:$TAG
