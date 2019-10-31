@@ -23,6 +23,11 @@ jobs:
         id: go
       - name: Check out code
         uses: actions/checkout@v1
+      - name: Cache go build
+        uses: actions/cache@preview
+        with:
+          path: /home/runner/.cache/go-build
+          key: ${{ hashFiles(format('{0}{1}', github.workspace, '/**/*.go')) }}
       - name: Test
         run: go test ./... -race -bench . -benchmem
   publish:
