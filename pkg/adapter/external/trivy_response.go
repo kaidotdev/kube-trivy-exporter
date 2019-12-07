@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"encoding/json"
 	"kube-trivy-exporter/pkg/domain"
 	"runtime/debug"
 	"sync"
@@ -58,9 +59,16 @@ func (c *TrivyResponseAdapter) Request(
 			}()
 
 			semaphore <- struct{}{}
-			trivyResponses, err := c.trivyClient.Do(ctx, container.Image)
+			out, err := c.trivyClient.Do(ctx, container.Image)
 			if err != nil {
 				c.logger.Printf("Failed to detect vulnerability at %s: %s\n", container.Image, err.Error())
+				return
+			}
+
+			var trivyResponses []domain.TrivyResponse
+			if err := json.Unmarshal(out, &trivyResponses); err != nil {
+				c.logger.Printf("Failed to parse trivy response at %s: %s\n", container.Image, err.Error())
+				return
 			}
 			func() {
 				mutex.Lock()

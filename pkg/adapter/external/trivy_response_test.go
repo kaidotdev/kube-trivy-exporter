@@ -47,12 +47,8 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
-						return []domain.TrivyResponse{
-							{
-								Target: "fake",
-							},
-						}, nil
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte(`[{"Target":"fake"}]`), nil
 					},
 				},
 				1,
@@ -92,12 +88,8 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
-						return []domain.TrivyResponse{
-							{
-								Target: "fake",
-							},
-						}, nil
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte(`[{"Target":"fake"}]`), nil
 					},
 				},
 				1,
@@ -140,12 +132,8 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
-						return []domain.TrivyResponse{
-							{
-								Target: "fake",
-							},
-						}, nil
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte(`[{"Target":"fake"}]`), nil
 					},
 				},
 				2,
@@ -219,7 +207,7 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						return nil, errors.New("fake")
 					},
 				},
@@ -261,7 +249,7 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						<-ctx.Done()
 						return nil, errors.New("done")
 					},
@@ -308,7 +296,7 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						panic(errors.New("fake"))
 					},
 				},

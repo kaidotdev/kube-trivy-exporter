@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"kube-trivy-exporter/pkg/client"
-	"kube-trivy-exporter/pkg/domain"
 	"runtime"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestTrivyClientDo(t *testing.T) {
 	}
 
 	type want struct {
-		first []domain.TrivyResponse
+		first []byte
 	}
 
 	tests := []struct {
@@ -55,23 +54,17 @@ func TestTrivyClientDo(t *testing.T) {
 				"dummy",
 			},
 			want{
-				[]domain.TrivyResponse{
-					{
-						Target: "k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
-						Vulnerabilities: []domain.TrivyVulnerability{
-							{
-								VulnerabilityID:  "CVE-2011-3374",
-								PkgName:          "apt",
-								InstalledVersion: "1.4.9",
-								FixedVersion:     "",
-								Title:            "",
-								Description:      "",
-								Severity:         "LOW",
-								References:       nil,
-							},
-						},
-					},
-				},
+				[]byte(`[{"Target": "k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
+"Vulnerabilities":[{
+"VulnerabilityID":"CVE-2011-3374",
+"PkgName":"apt",
+"InstalledVersion":"1.4.9",
+"FixedVersion":"",
+"Title":"",
+"Description":"",
+"Severity":"LOW",
+"References":null
+}]}]`),
 			},
 			"",
 			func(got interface{}) cmp.Option {
@@ -95,29 +88,7 @@ func TestTrivyClientDo(t *testing.T) {
 			want{
 				nil,
 			},
-			"could not execute trivy command: fake",
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			&client.TrivyClient{
-				Executor: func(context.Context, string, ...string) ([]byte, error) {
-					return []byte("fake"), nil
-				},
-			},
-			in{
-				context.Background(),
-				"dummy",
-			},
-			want{
-				nil,
-			},
-			"could not parse trivy response: invalid character 'k' in literal false (expecting 'l')",
+			"fake",
 			func(got interface{}) cmp.Option {
 				return nil
 			},

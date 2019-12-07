@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"kube-trivy-exporter/pkg/domain"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -12,7 +11,7 @@ type IKubernetesClient interface {
 }
 
 type ITrivyClient interface {
-	Do(context.Context, string) ([]domain.TrivyResponse, error)
+	Do(context.Context, string) ([]byte, error)
 }
 
 type ILogger interface {

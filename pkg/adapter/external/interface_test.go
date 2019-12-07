@@ -3,7 +3,6 @@ package external_test
 import (
 	"context"
 	"kube-trivy-exporter/pkg/adapter/external"
-	"kube-trivy-exporter/pkg/domain"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -19,10 +18,10 @@ func (k *kubernetesClientMock) Containers() ([]v1.Container, error) {
 
 type trivyClientMock struct {
 	external.ITrivyClient
-	fakeDo func(context.Context, string) ([]domain.TrivyResponse, error)
+	fakeDo func(context.Context, string) ([]byte, error)
 }
 
-func (t *trivyClientMock) Do(ctx context.Context, image string) ([]domain.TrivyResponse, error) {
+func (t *trivyClientMock) Do(ctx context.Context, image string) ([]byte, error) {
 	return t.fakeDo(ctx, image)
 }
 
