@@ -68,7 +68,7 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 			prometheus.NewDesc(
 				"trivy_vulnerabilities",
 				"Vulnerabilities detected by trivy",
-				[]string{"target", "vulnerabilityId", "pkgName", "installedVersion", "severity"},
+				[]string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity"},
 				nil,
 			),
 			func(got interface{}) cmp.Option {
@@ -143,9 +143,9 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					Namespace: "trivy",
 					Name:      "vulnerabilities",
 					Help:      "Vulnerabilities detected by trivy",
-				}, []string{"target", "vulnerabilityId", "pkgName", "installedVersion", "severity"})
+				}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity"})
 				labels := []string{
-					"k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
+					"k8s.gcr.io/kube-addon-manager:v9.0.2",
 					"CVE-2011-3374",
 					"apt",
 					"1.4.9",

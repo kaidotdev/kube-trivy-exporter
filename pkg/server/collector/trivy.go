@@ -41,7 +41,7 @@ func NewTrivyCollector(
 			Namespace: namespace,
 			Name:      "vulnerabilities",
 			Help:      "Vulnerabilities detected by trivy",
-		}, []string{"target", "vulnerabilityId", "pkgName", "installedVersion", "severity"}),
+		}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity"}),
 		cancelFunc: cancel,
 	}
 
@@ -73,7 +73,7 @@ func (c *TrivyCollector) startLoop(ctx context.Context) {
 				for _, trivyResponse := range trivyResponses {
 					for _, vulnerability := range trivyResponse.Vulnerabilities {
 						labels := []string{
-							trivyResponse.Target,
+							trivyResponse.ExtractImage(),
 							vulnerability.VulnerabilityID,
 							vulnerability.PkgName,
 							vulnerability.InstalledVersion,
