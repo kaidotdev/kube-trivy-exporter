@@ -3,10 +3,12 @@ package external
 import (
 	"context"
 	"kube-trivy-exporter/pkg/domain"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 type IKubernetesClient interface {
-	Containers() ([]domain.KubernetesContainer, error)
+	Containers() ([]v1.Container, error)
 }
 
 type ITrivyClient interface {

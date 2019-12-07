@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"kube-trivy-exporter/pkg/client"
-	"kube-trivy-exporter/pkg/domain"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	apiV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	appsV1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 )
 
 type kubernetesClientsetMock struct {
@@ -22,7 +23,7 @@ type kubernetesClientsetMock struct {
 	fakeDaemonSetList   func(metaV1.ListOptions) (*apiV1.DaemonSetList, error)
 }
 
-func (k *kubernetesClientsetMock) AppsV1() v1.AppsV1Interface {
+func (k *kubernetesClientsetMock) AppsV1() appsV1.AppsV1Interface {
 	return &appsV1Mock{
 		fakeDeploymentList:  k.fakeDeploymentList,
 		fakeStatefulSetList: k.fakeStatefulSetList,
@@ -31,20 +32,20 @@ func (k *kubernetesClientsetMock) AppsV1() v1.AppsV1Interface {
 }
 
 type appsV1Mock struct {
-	v1.AppsV1Interface
+	appsV1.AppsV1Interface
 	fakeDeploymentList  func(metaV1.ListOptions) (*apiV1.DeploymentList, error)
 	fakeStatefulSetList func(metaV1.ListOptions) (*apiV1.StatefulSetList, error)
 	fakeDaemonSetList   func(metaV1.ListOptions) (*apiV1.DaemonSetList, error)
 }
 
-func (a *appsV1Mock) Deployments(namespace string) v1.DeploymentInterface {
+func (a *appsV1Mock) Deployments(namespace string) appsV1.DeploymentInterface {
 	return &deploymentMock{
 		fakeList: a.fakeDeploymentList,
 	}
 }
 
 type deploymentMock struct {
-	v1.DeploymentInterface
+	appsV1.DeploymentInterface
 	fakeList func(metaV1.ListOptions) (*apiV1.DeploymentList, error)
 }
 
@@ -52,14 +53,14 @@ func (d *deploymentMock) List(opts metaV1.ListOptions) (*apiV1.DeploymentList, e
 	return d.fakeList(opts)
 }
 
-func (a *appsV1Mock) StatefulSets(namespace string) v1.StatefulSetInterface {
+func (a *appsV1Mock) StatefulSets(namespace string) appsV1.StatefulSetInterface {
 	return &statefulSetMock{
 		fakeList: a.fakeStatefulSetList,
 	}
 }
 
 type statefulSetMock struct {
-	v1.StatefulSetInterface
+	appsV1.StatefulSetInterface
 	fakeList func(metaV1.ListOptions) (*apiV1.StatefulSetList, error)
 }
 
@@ -67,14 +68,14 @@ func (s *statefulSetMock) List(opts metaV1.ListOptions) (*apiV1.StatefulSetList,
 	return s.fakeList(opts)
 }
 
-func (a *appsV1Mock) DaemonSets(namespace string) v1.DaemonSetInterface {
+func (a *appsV1Mock) DaemonSets(namespace string) appsV1.DaemonSetInterface {
 	return &daemonSetMock{
 		fakeList: a.fakeDaemonSetList,
 	}
 }
 
 type daemonSetMock struct {
-	v1.DaemonSetInterface
+	appsV1.DaemonSetInterface
 	fakeList func(metaV1.ListOptions) (*apiV1.DaemonSetList, error)
 }
 
@@ -123,20 +124,22 @@ func TestKubernetesClientContainers(t *testing.T) {
 		},
 	}
 
-	type in struct{}
-
 	type want struct {
-		first []domain.KubernetesContainer
+		first []v1.Container
 	}
 
 	tests := []struct {
+		name            string
 		receiver        *client.KubernetesClient
-		in              in
 		want            want
 		wantErrorString string
 		optsFunction    func(interface{}) cmp.Option
 	}{
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.KubernetesClient{
 				Inner: &kubernetesClientsetMock{
 					fakeDeploymentList: func(opts metaV1.ListOptions) (*apiV1.DeploymentList, error) {
@@ -162,23 +165,16 @@ func TestKubernetesClientContainers(t *testing.T) {
 					},
 				},
 			},
-			in{},
 			want{
-				[]domain.KubernetesContainer{
+				[]v1.Container{
 					{
-						Container: coreV1.Container{
-							Image: "deployment",
-						},
+						Image: "deployment",
 					},
 					{
-						Container: coreV1.Container{
-							Image: "statefulSet",
-						},
+						Image: "statefulSet",
 					},
 					{
-						Container: coreV1.Container{
-							Image: "daemonSet",
-						},
+						Image: "daemonSet",
 					},
 				},
 			},
@@ -188,6 +184,10 @@ func TestKubernetesClientContainers(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.KubernetesClient{
 				Inner: &kubernetesClientsetMock{
 					fakeDeploymentList: func(opts metaV1.ListOptions) (*apiV1.DeploymentList, error) {
@@ -195,7 +195,6 @@ func TestKubernetesClientContainers(t *testing.T) {
 					},
 				},
 			},
-			in{},
 			want{
 				nil,
 			},
@@ -205,6 +204,10 @@ func TestKubernetesClientContainers(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.KubernetesClient{
 				Inner: &kubernetesClientsetMock{
 					fakeDeploymentList: func(opts metaV1.ListOptions) (*apiV1.DeploymentList, error) {
@@ -219,7 +222,6 @@ func TestKubernetesClientContainers(t *testing.T) {
 					},
 				},
 			},
-			in{},
 			want{
 				nil,
 			},
@@ -229,6 +231,10 @@ func TestKubernetesClientContainers(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.KubernetesClient{
 				Inner: &kubernetesClientsetMock{
 					fakeDeploymentList: func(opts metaV1.ListOptions) (*apiV1.DeploymentList, error) {
@@ -250,7 +256,6 @@ func TestKubernetesClientContainers(t *testing.T) {
 					},
 				},
 			},
-			in{},
 			want{
 				nil,
 			},
@@ -261,12 +266,12 @@ func TestKubernetesClientContainers(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		name := tt.name
 		receiver := tt.receiver
-		in := tt.in
 		want := tt.want
 		wantErrorString := tt.wantErrorString
 		optsFunction := tt.optsFunction
-		t.Run(fmt.Sprintf("%#v/%#v", receiver, in), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			got, err := receiver.Containers()

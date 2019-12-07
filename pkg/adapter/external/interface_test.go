@@ -4,14 +4,16 @@ import (
 	"context"
 	"kube-trivy-exporter/pkg/adapter/external"
 	"kube-trivy-exporter/pkg/domain"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 type kubernetesClientMock struct {
 	external.IKubernetesClient
-	fakeContainers func() ([]domain.KubernetesContainer, error)
+	fakeContainers func() ([]v1.Container, error)
 }
 
-func (k *kubernetesClientMock) Containers() ([]domain.KubernetesContainer, error) {
+func (k *kubernetesClientMock) Containers() ([]v1.Container, error) {
 	return k.fakeContainers()
 }
 

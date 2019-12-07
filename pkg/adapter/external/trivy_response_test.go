@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	coreV1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestTrivyResponseRequest(t *testing.T) {
@@ -32,12 +32,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
@@ -72,17 +70,13 @@ func TestTrivyResponseRequest(t *testing.T) {
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
@@ -120,17 +114,13 @@ func TestTrivyResponseRequest(t *testing.T) {
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
@@ -168,7 +158,7 @@ func TestTrivyResponseRequest(t *testing.T) {
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
+					fakeContainers: func() ([]v1.Container, error) {
 						return nil, errors.New("fake")
 					},
 				},
@@ -198,12 +188,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
@@ -238,12 +226,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
@@ -283,12 +269,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 					},
 				},
 				&kubernetesClientMock{
-					fakeContainers: func() ([]domain.KubernetesContainer, error) {
-						return []domain.KubernetesContainer{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Container: coreV1.Container{
-									Image: "fake",
-								},
+								Image: "fake",
 							},
 						}, nil
 					},

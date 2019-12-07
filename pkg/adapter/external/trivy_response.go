@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"golang.org/x/xerrors"
+	v1 "k8s.io/api/core/v1"
 )
 
 type TrivyResponseAdapter struct {
@@ -47,7 +48,7 @@ func (c *TrivyResponseAdapter) Request(
 	var retval []domain.TrivyResponse
 	for _, container := range containers {
 		wg.Add(1)
-		go func(container domain.KubernetesContainer) {
+		go func(container v1.Container) {
 			defer wg.Done()
 			defer func() {
 				if err := recover(); err != nil {
