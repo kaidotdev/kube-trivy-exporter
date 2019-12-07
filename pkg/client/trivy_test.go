@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"kube-trivy-exporter/pkg/client"
 	"kube-trivy-exporter/pkg/domain"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,6 +23,7 @@ func TestTrivyClientDo(t *testing.T) {
 	}
 
 	tests := []struct {
+		name            string
 		receiver        *client.TrivyClient
 		in              in
 		want            want
@@ -29,6 +31,10 @@ func TestTrivyClientDo(t *testing.T) {
 		optsFunction    func(interface{}) cmp.Option
 	}{
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.TrivyClient{
 				Executor: func(context.Context, string, ...string) ([]byte, error) {
 					return []byte(`[{"Target": "k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
@@ -73,6 +79,10 @@ func TestTrivyClientDo(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.TrivyClient{
 				Executor: func(context.Context, string, ...string) ([]byte, error) {
 					return nil, errors.New("fake")
@@ -91,6 +101,10 @@ func TestTrivyClientDo(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			&client.TrivyClient{
 				Executor: func(context.Context, string, ...string) ([]byte, error) {
 					return []byte("fake"), nil
@@ -110,12 +124,13 @@ func TestTrivyClientDo(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		name := tt.name
 		receiver := tt.receiver
 		in := tt.in
 		want := tt.want
 		wantErrorString := tt.wantErrorString
 		optsFunction := tt.optsFunction
-		t.Run(fmt.Sprintf("%#v/%#v", receiver, in), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			got, err := receiver.Do(in.first, in.second)

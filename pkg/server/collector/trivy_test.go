@@ -7,6 +7,7 @@ import (
 	"kube-trivy-exporter/pkg/domain"
 	"kube-trivy-exporter/pkg/server/collector"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 
@@ -26,12 +27,17 @@ func (a *trivyResponseAdapterMock) Request(ctx context.Context) ([]domain.TrivyR
 
 func TestTrivyCollectorDescribe(t *testing.T) {
 	tests := []struct {
+		name         string
 		receiver     *collector.TrivyCollector
 		in           chan *prometheus.Desc
 		want         *prometheus.Desc
 		optsFunction func(interface{}) cmp.Option
 	}{
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{},
@@ -75,11 +81,12 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		name := tt.name
 		receiver := tt.receiver
 		in := tt.in
 		want := tt.want
 		optsFunction := tt.optsFunction
-		t.Run(fmt.Sprintf("%#v/%#v", receiver, in), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			receiver.Describe(in)
@@ -93,12 +100,17 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 
 func TestTrivyCollectorCollect(t *testing.T) {
 	tests := []struct {
+		name         string
 		receiver     *collector.TrivyCollector
 		in           chan prometheus.Metric
 		want         prometheus.Metric
 		optsFunction func(interface{}) cmp.Option
 	}{
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{},
@@ -173,6 +185,10 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
@@ -202,6 +218,10 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
@@ -231,6 +251,10 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			collector.NewTrivyCollector(
 				func() context.Context {
 					ctx, cancel := context.WithCancel(context.Background())
@@ -253,11 +277,12 @@ func TestTrivyCollectorCollect(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		name := tt.name
 		receiver := tt.receiver
 		in := tt.in
 		want := tt.want
 		optsFunction := tt.optsFunction
-		t.Run(fmt.Sprintf("%#v/%#v", receiver, in), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			time.Sleep(20 * time.Millisecond)

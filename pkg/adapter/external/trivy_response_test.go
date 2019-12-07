@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"kube-trivy-exporter/pkg/adapter/external"
 	"kube-trivy-exporter/pkg/domain"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,6 +23,7 @@ func TestTrivyResponseRequest(t *testing.T) {
 	}
 
 	tests := []struct {
+		name            string
 		receiver        *external.TrivyResponseAdapter
 		in              in
 		want            want
@@ -29,6 +31,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 		optsFunction    func(interface{}) cmp.Option
 	}{
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
@@ -67,6 +73,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
@@ -111,6 +121,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
@@ -155,6 +169,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{},
 				&kubernetesClientMock{
@@ -177,6 +195,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{
 					fakePrintf: func(format string, v ...interface{}) {
@@ -215,6 +237,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{
 					fakePrintf: func(format string, v ...interface{}) {
@@ -258,6 +284,10 @@ func TestTrivyResponseRequest(t *testing.T) {
 			},
 		},
 		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
 			external.NewTrivyResponseAdapter(
 				loggerMock{
 					fakePrintf: func(format string, v ...interface{}) {
@@ -297,12 +327,13 @@ func TestTrivyResponseRequest(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		name := tt.name
 		receiver := tt.receiver
 		in := tt.in
 		want := tt.want
 		wantErrorString := tt.wantErrorString
 		optsFunction := tt.optsFunction
-		t.Run(fmt.Sprintf("%#v/%#v", receiver, in), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			got, err := receiver.Request(in.first)
