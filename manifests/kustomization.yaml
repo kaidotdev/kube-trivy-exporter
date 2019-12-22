@@ -3,7 +3,7 @@ namespace: default
 resources:
   - cluster_role.yaml
   - cluster_role_binding.yaml
-  - pod_distruption_budget.yaml
+  - pod_disruption_budget.yaml
   - service.yaml
   - service_account.yaml
   - stateful_set.yaml
