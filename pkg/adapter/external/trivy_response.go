@@ -59,6 +59,9 @@ func (c *TrivyResponseAdapter) Request(
 			}()
 
 			semaphore <- struct{}{}
+			defer func() {
+				<-semaphore
+			}()
 			out, err := c.trivyClient.Do(ctx, container.Image)
 			if err != nil {
 				c.logger.Printf("Failed to detect vulnerability at %s: %s\n", container.Image, err.Error())
@@ -75,8 +78,6 @@ func (c *TrivyResponseAdapter) Request(
 				defer mutex.Unlock()
 				retval = append(retval, trivyResponses...)
 			}()
-
-			<-semaphore
 		}(container)
 	}
 	wg.Wait()
