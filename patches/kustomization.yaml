@@ -1,0 +1,10 @@
+namespace: kube-trivy-exporter
+
+bases:
+  - ../manifests
+
+resources:
+  - namespace.yaml
+
+patchesStrategicMerge:
+  - stateful_set.yaml

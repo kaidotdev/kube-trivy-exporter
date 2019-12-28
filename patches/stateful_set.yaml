@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kube-trivy-exporter
+spec:
+  template:
+    spec:
+      containers:
+        - name: kube-trivy-exporter
+          image: kube-trivy-exporter
+          imagePullPolicy: Never
+          args:
+            - server
+            - --api-address=0.0.0.0:8000
+            - --monitor-address=0.0.0.0:9090
+            - --enable-tracing
+            - --trivy-concurrency=1
+            - --collector-loop-interval=60
