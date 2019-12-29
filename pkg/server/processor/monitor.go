@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"kube-trivy-exporter/pkg/adapter/external"
 	"kube-trivy-exporter/pkg/client"
 	"kube-trivy-exporter/pkg/server/collector"
 	"net"
@@ -60,18 +59,15 @@ func NewMonitor(settings MonitorSettings) (*Monitor, error) {
 	registry.MustRegister(collector.NewTrivyCollector(
 		context.Background(),
 		settings.Logger,
-		external.NewTrivyResponseAdapter(
-			settings.Logger,
-			&client.KubernetesClient{
-				Inner: settings.KubernetesClient,
+		&client.KubernetesClient{
+			Inner: settings.KubernetesClient,
+		},
+		&client.TrivyClient{
+			Executor: func(ctx context.Context, name string, arg ...string) ([]byte, error) {
+				return exec.CommandContext(ctx, name, arg...).CombinedOutput()
 			},
-			&client.TrivyClient{
-				Executor: func(ctx context.Context, name string, arg ...string) ([]byte, error) {
-					return exec.CommandContext(ctx, name, arg...).CombinedOutput()
-				},
-			},
-			settings.TrivyConcurrency,
-		),
+		},
+		settings.TrivyConcurrency,
 		settings.CollectorLoopInterval,
 	))
 

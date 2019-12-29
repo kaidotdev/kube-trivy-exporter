@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"kube-trivy-exporter/pkg/domain"
 	"kube-trivy-exporter/pkg/server/collector"
 	"reflect"
 	"runtime"
@@ -14,16 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/prometheus/client_golang/prometheus"
+	v1 "k8s.io/api/core/v1"
 )
-
-type trivyResponseAdapterMock struct {
-	collector.ITrivyResponseAdapter
-	fakeRequest func(context.Context) ([]domain.TrivyResponse, error)
-}
-
-func (a *trivyResponseAdapterMock) Request(ctx context.Context) ([]domain.TrivyResponse, error) {
-	return a.fakeRequest(ctx)
-}
 
 func TestTrivyCollectorDescribe(t *testing.T) {
 	tests := []struct {
@@ -41,27 +32,17 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{},
-				&trivyResponseAdapterMock{
-					fakeRequest: func(ctx context.Context) ([]domain.TrivyResponse, error) {
-						return []domain.TrivyResponse{
-							{
-								Target: "k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
-								Vulnerabilities: []domain.TrivyVulnerability{
-									{
-										VulnerabilityID:  "CVE-2011-3374",
-										PkgName:          "apt",
-										InstalledVersion: "1.4.9",
-										FixedVersion:     "",
-										Title:            "",
-										Description:      "",
-										Severity:         "LOW",
-										References:       nil,
-									},
-								},
-							},
-						}, nil
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{}, nil
 					},
 				},
+				&trivyClientMock{
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte{}, nil
+					},
+				},
+				1,
 				10*time.Millisecond,
 			),
 			make(chan *prometheus.Desc, 1),
@@ -114,27 +95,21 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{},
-				&trivyResponseAdapterMock{
-					fakeRequest: func(ctx context.Context) ([]domain.TrivyResponse, error) {
-						return []domain.TrivyResponse{
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
 							{
-								Target: "k8s.gcr.io/kube-addon-manager:v9.0.2 (debian 9.8)",
-								Vulnerabilities: []domain.TrivyVulnerability{
-									{
-										VulnerabilityID:  "CVE-2011-3374",
-										PkgName:          "apt",
-										InstalledVersion: "1.4.9",
-										FixedVersion:     "",
-										Title:            "",
-										Description:      "",
-										Severity:         "LOW",
-										References:       nil,
-									},
-								},
+								Image: "fake",
 							},
 						}, nil
 					},
 				},
+				&trivyClientMock{
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte(`[{"Target":"fake","Vulnerabilities":[{"VulnerabilityID":"fake"}]}]`), nil
+					},
+				},
+				1,
 				10*time.Millisecond,
 			),
 			make(chan prometheus.Metric, 1),
@@ -145,11 +120,11 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					Help:      "Vulnerabilities detected by trivy",
 				}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity"})
 				labels := []string{
-					"k8s.gcr.io/kube-addon-manager:v9.0.2",
-					"CVE-2011-3374",
-					"apt",
-					"1.4.9",
-					"LOW",
+					"fake",
+					"fake",
+					"",
+					"",
+					"",
 				}
 				gaugeVec.WithLabelValues(labels...).Set(1)
 				gauge, err := gaugeVec.GetMetricWithLabelValues(labels...)
@@ -193,18 +168,106 @@ func TestTrivyCollectorCollect(t *testing.T) {
 				context.Background(),
 				loggerMock{
 					fakePrintf: func(format string, v ...interface{}) {
-						want := "Failed to collect metrics: fake\n"
+						want := "Failed to get containers: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
 				},
-				&trivyResponseAdapterMock{
-					fakeRequest: func(ctx context.Context) ([]domain.TrivyResponse, error) {
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
 						return nil, errors.New("fake")
 					},
 				},
+				&trivyClientMock{},
+				1,
+				10*time.Millisecond,
+			),
+			func() chan prometheus.Metric {
+				ch := make(chan prometheus.Metric, 1)
+				close(ch)
+				return ch
+			}(),
+			nil,
+			func(got interface{}) cmp.Option {
+				return nil
+			},
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				context.Background(),
+				loggerMock{
+					fakePrintf: func(format string, v ...interface{}) {
+						want := "Failed to detect vulnerability at fake: fake\n"
+						got := fmt.Sprintf(format, v...)
+						if diff := cmp.Diff(want, got); diff != "" {
+							t.Errorf("(-want +got):\n%s", diff)
+						}
+					},
+				},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
+							{
+								Image: "fake",
+							},
+						}, nil
+					},
+				},
+				&trivyClientMock{
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return nil, errors.New("fake")
+					},
+				},
+				1,
+				10*time.Millisecond,
+			),
+			func() chan prometheus.Metric {
+				ch := make(chan prometheus.Metric, 1)
+				close(ch)
+				return ch
+			}(),
+			nil,
+			func(got interface{}) cmp.Option {
+				return nil
+			},
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				context.Background(),
+				loggerMock{
+					fakePrintf: func(format string, v ...interface{}) {
+						want := "Failed to parse trivy response at fake: invalid character 'k' in literal false (expecting 'l')\n"
+						got := fmt.Sprintf(format, v...)
+						if diff := cmp.Diff(want, got); diff != "" {
+							t.Errorf("(-want +got):\n%s", diff)
+						}
+					},
+				},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
+							{
+								Image: "fake",
+							},
+						}, nil
+					},
+				},
+				&trivyClientMock{
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte("fake"), nil
+					},
+				},
+				1,
 				10*time.Millisecond,
 			),
 			func() chan prometheus.Metric {
@@ -233,11 +296,56 @@ func TestTrivyCollectorCollect(t *testing.T) {
 						}
 					},
 				},
-				&trivyResponseAdapterMock{
-					fakeRequest: func(ctx context.Context) ([]domain.TrivyResponse, error) {
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
 						panic(errors.New("fake"))
 					},
 				},
+				&trivyClientMock{},
+				1,
+				10*time.Millisecond,
+			),
+			func() chan prometheus.Metric {
+				ch := make(chan prometheus.Metric, 1)
+				close(ch)
+				return ch
+			}(),
+			nil,
+			func(got interface{}) cmp.Option {
+				return nil
+			},
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				context.Background(),
+				loggerMock{
+					fakePrintf: func(format string, v ...interface{}) {
+						want := "panic: fake\n"
+						got := fmt.Sprintf(format, v...)
+						if diff := cmp.Diff(want, got); diff != "" {
+							t.Errorf("(-want +got):\n%s", diff)
+						}
+					},
+				},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
+							{
+								Image: "fake",
+							},
+						}, nil
+					},
+				},
+				&trivyClientMock{
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						panic(errors.New("fake"))
+					},
+				},
+				1,
 				10*time.Millisecond,
 			),
 			func() chan prometheus.Metric {
@@ -262,7 +370,9 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					return ctx
 				}(),
 				loggerMock{},
-				&trivyResponseAdapterMock{},
+				&kubernetesClientMock{},
+				&trivyClientMock{},
+				1,
 				10*time.Millisecond,
 			),
 			func() chan prometheus.Metric {

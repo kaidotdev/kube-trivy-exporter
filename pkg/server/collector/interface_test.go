@@ -1,8 +1,11 @@
 package collector_test
 
 import (
+	"context"
 	"kube-trivy-exporter/pkg/server/collector"
 	"reflect"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 type loggerMock struct {
@@ -35,4 +38,22 @@ func getRecursiveStructReflectValue(rv reflect.Value) []reflect.Value {
 	default:
 	}
 	return values
+}
+
+type kubernetesClientMock struct {
+	collector.IKubernetesClient
+	fakeContainers func() ([]v1.Container, error)
+}
+
+func (k *kubernetesClientMock) Containers() ([]v1.Container, error) {
+	return k.fakeContainers()
+}
+
+type trivyClientMock struct {
+	collector.ITrivyClient
+	fakeDo func(context.Context, string) ([]byte, error)
+}
+
+func (t *trivyClientMock) Do(ctx context.Context, image string) ([]byte, error) {
+	return t.fakeDo(ctx, image)
 }
