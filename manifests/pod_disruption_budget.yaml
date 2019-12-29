@@ -3,7 +3,7 @@ kind: PodDisruptionBudget
 metadata:
   name: kube-trivy-exporter
 spec:
-  maxUnavailable: 0
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: kube-trivy-exporter
