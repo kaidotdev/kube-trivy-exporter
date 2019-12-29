@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="metrics#1" type="HttpClient.HttpRequestRunConfigurationType" factoryName="HTTP Request" singleton="false" path="$PROJECT_DIR$/metrics.http">
-    <method v="2" />
-  </configuration>
-</component>
