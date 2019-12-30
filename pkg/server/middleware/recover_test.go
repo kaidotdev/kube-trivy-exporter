@@ -35,13 +35,14 @@ func TestRecoverMiddleware(t *testing.T) {
 			}(),
 			middleware.NewRecoverMiddleware(
 				loggerMock{
-					fakePrintf: func(format string, v ...interface{}) {
+					fakeError: func(format string, v ...interface{}) {
 						want := "panic: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
+					fakeDebug: func(format string, v ...interface{}) {},
 				},
 			)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(errors.New("fake"))

@@ -2,15 +2,55 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
+
+	"golang.org/x/xerrors"
 )
+
+type ClientClosedRequestError struct {
+	Method string
+	URL    *url.URL
+	Header http.Header
+	Err    error
+	frame  xerrors.Frame
+}
+
+func NewClientClosedRequestError(r *http.Request, err error) *ClientClosedRequestError {
+	return &ClientClosedRequestError{
+		Method: r.Method,
+		URL:    r.URL,
+		Header: r.Header,
+		Err:    err,
+		frame:  xerrors.Caller(1),
+	}
+}
+
+func (e *ClientClosedRequestError) Error() string {
+	return fmt.Sprintf("client closed request in %s %s", e.Method, e.URL.String())
+}
+
+func (e *ClientClosedRequestError) Unwrap() error {
+	return e.Err
+}
+
+func (e *ClientClosedRequestError) Format(f fmt.State, c rune) {
+	xerrors.FormatError(e, f, c)
+}
+
+func (e *ClientClosedRequestError) FormatError(p xerrors.Printer) error {
+	p.Print(e.Error())
+	e.frame.Format(p)
+	return e.Err
+}
 
 func NewClientClosedRequestMiddleware(logger ILogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
-				if r.Context().Err() == context.Canceled {
-					logger.Printf("Client Closed Request\n")
+				if err := r.Context().Err(); err == context.Canceled {
+					logger.Info("%+v\n", NewClientClosedRequestError(r, err))
 				}
 			}()
 			next.ServeHTTP(w, r)

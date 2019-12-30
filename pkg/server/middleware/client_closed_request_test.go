@@ -35,8 +35,12 @@ func TestClientClosedRequestMiddleware(t *testing.T) {
 			}(),
 			middleware.NewClientClosedRequestMiddleware(
 				loggerMock{
-					fakePrintf: func(format string, v ...interface{}) {
-						want := "Client Closed Request\n"
+					fakeInfo: func(format string, v ...interface{}) {
+						want := `client closed request in GET /:
+    kube-trivy-exporter/pkg/server/middleware.NewClientClosedRequestMiddleware.func1.1.1
+        kube-trivy-exporter@/pkg/server/middleware/client_closed_request.go:53
+  - context canceled
+`
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)

@@ -7,6 +7,7 @@ type IKubernetesClient interface {
 }
 
 type ILogger interface {
-	Printf(format string, v ...interface{})
-	Fatalf(format string, v ...interface{})
+	Error(format string, v ...interface{})
+	Info(format string, v ...interface{})
+	Debug(format string, v ...interface{})
 }

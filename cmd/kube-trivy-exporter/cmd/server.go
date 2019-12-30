@@ -25,7 +25,10 @@ func serverCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			server.Run(serverArgs)
+			err := server.Run(serverArgs)
+			if err != nil {
+				log.Fatalf("Failed to run server.Run: %s\n", err.Error())
+			}
 		},
 	}
 
@@ -122,7 +125,7 @@ func serverCmd() *cobra.Command {
 	)
 
 	if err := viper.BindPFlags(serverCmd.PersistentFlags()); err != nil {
-		log.Fatalf("failed to execute command: %s\n", err)
+		log.Fatalf("Failed to execute command: %s\n", err)
 	}
 
 	return serverCmd

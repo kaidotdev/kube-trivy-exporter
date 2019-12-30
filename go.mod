@@ -14,6 +14,7 @@ require (
 	go.opencensus.io v0.22.1
 	golang.org/x/net v0.0.0-20191021144547-ec77196f6094
 	golang.org/x/sys v0.0.0-20191024172528-b4ff53e7a1cb
+	golang.org/x/tools v0.0.0-20191227053925-7b8e75db28f4 // indirect
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b

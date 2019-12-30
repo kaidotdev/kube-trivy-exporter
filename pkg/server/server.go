@@ -9,21 +9,45 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-func Run(a *Args) {
+type defaultLogger struct {
+	errorLogger *log.Logger
+	infoLogger  *log.Logger
+	debugLogger *log.Logger
+}
+
+func (dl *defaultLogger) Error(format string, v ...interface{}) {
+	dl.errorLogger.Printf(format, v...)
+}
+
+func (dl *defaultLogger) Info(format string, v ...interface{}) {
+	dl.infoLogger.Printf(format, v...)
+}
+
+func (dl *defaultLogger) Debug(format string, v ...interface{}) {
+	dl.debugLogger.Printf(format, v...)
+}
+
+func Run(a *Args) error {
 	i := NewInstance()
-	i.SetLogger(log.New(os.Stderr, "", log.LUTC))
+	i.SetLogger(&defaultLogger{
+		errorLogger: log.New(os.Stderr, "[ERROR] ", log.LUTC),
+		infoLogger:  log.New(os.Stdout, "[INFO] ", log.LUTC),
+		debugLogger: log.New(os.Stdout, "[DEBUG] ", log.LUTC),
+	})
 
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
-		i.logger.Fatalf("could not create kubernetes config: %s\n", err.Error())
+		return xerrors.Errorf("failed to create kubernetes config: %w", err)
 	}
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		i.logger.Fatalf("could not create kubernetes client: %s\n", err.Error())
+		return xerrors.Errorf("failed to create kubernetes client: %w", err)
 	}
 	i.SetKubernetesClient(clientset)
 
@@ -36,7 +60,7 @@ func Run(a *Args) {
 		Logger:               i.Logger(),
 	})
 	if err != nil {
-		i.logger.Fatalf("failed to create api: %s\n", err.Error())
+		return xerrors.Errorf("failed to create api: %w", err)
 	}
 	i.AddProcessor(api)
 
@@ -56,7 +80,7 @@ func Run(a *Args) {
 		Logger:                i.Logger(),
 	})
 	if err != nil {
-		i.logger.Fatalf("failed to create monitor: %s\n", err.Error())
+		return xerrors.Errorf("failed to create monitor: %w", err)
 	}
 	i.AddProcessor(monitor)
 
@@ -65,7 +89,8 @@ func Run(a *Args) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
-	i.logger.Printf("Shutdown Instance ...\n")
+	i.logger.Info("Attempt to shutdown instance...\n")
 
 	i.Shutdown(context.Background())
+	return nil
 }

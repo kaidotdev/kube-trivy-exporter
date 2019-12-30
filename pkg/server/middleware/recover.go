@@ -10,8 +10,8 @@ func NewRecoverMiddleware(logger ILogger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := recover(); err != nil {
-					logger.Printf("panic: %+v\n", err)
-					debug.PrintStack()
+					logger.Error("panic: %+v\n", err)
+					logger.Debug("%s\n", debug.Stack())
 					http.Error(w, http.StatusText(500), 500)
 				}
 			}()
