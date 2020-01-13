@@ -2,8 +2,7 @@ package server
 
 import (
 	"context"
-	"io/ioutil"
-	"log"
+	"kube-trivy-exporter/pkg/client"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -21,11 +20,7 @@ type Instance struct {
 
 func NewInstance() *Instance {
 	return &Instance{
-		logger: &defaultLogger{
-			errorLogger: log.New(ioutil.Discard, "", log.LUTC),
-			infoLogger:  log.New(ioutil.Discard, "", log.LUTC),
-			debugLogger: log.New(ioutil.Discard, "", log.LUTC),
-		},
+		logger: client.NewDefaultLogger(),
 	}
 }
 
@@ -54,12 +49,12 @@ func (i *Instance) Start() {
 		go func(processor IProcessor) {
 			defer func() {
 				if err := recover(); err != nil {
-					i.logger.Error("panic: %+v\n", err)
-					i.logger.Debug("%s\n", debug.Stack())
+					i.logger.Errorf("panic: %+v\n", err)
+					i.logger.Debugf("%s\n", debug.Stack())
 				}
 			}()
 			if err := processor.Start(); err != nil && err != http.ErrServerClosed {
-				i.logger.Error("Failed to listen: %s\n", err)
+				i.logger.Errorf("Failed to listen: %s\n", err)
 			}
 		}(processor)
 	}
@@ -70,13 +65,13 @@ func (i *Instance) Shutdown(ctx context.Context) {
 	defer cancel()
 	for _, p := range i.processors {
 		if err := p.Stop(ctx); err != nil {
-			i.logger.Error("Failed to shutdown: %+v\n", err)
+			i.logger.Errorf("Failed to shutdown: %+v\n", err)
 		}
 	}
 	select {
 	case <-ctx.Done():
-		i.logger.Info("Instance shutdown timed out in %d seconds\n", gracePeriod)
+		i.logger.Infof("Instance shutdown timed out in %d seconds\n", gracePeriod)
 	default:
 	}
-	i.logger.Info("Instance has been shutdown\n")
+	i.logger.Infof("Instance has been shutdown\n")
 }

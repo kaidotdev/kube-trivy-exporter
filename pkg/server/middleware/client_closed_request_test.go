@@ -3,6 +3,7 @@ package middleware_test
 import (
 	"context"
 	"fmt"
+	"kube-trivy-exporter/pkg/client"
 	"kube-trivy-exporter/pkg/server/middleware"
 	"net/http"
 	"net/http/httptest"
@@ -23,35 +24,33 @@ func TestClientClosedRequestMiddleware(t *testing.T) {
 				_, _, line, _ := runtime.Caller(1)
 				return fmt.Sprintf("L%d", line)
 			}(),
-			middleware.NewClientClosedRequestMiddleware(
-				loggerMock{},
-			)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
-			httptest.NewRequest("GET", "/", nil),
+			middleware.NewClientClosedRequestMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
+			httptest.NewRequest("GET", "/", nil).WithContext(client.SetRequestLogger(context.Background(), client.NewRequestLogger("", loggerMock{}))),
 		},
 		{
 			func() string {
 				_, _, line, _ := runtime.Caller(1)
 				return fmt.Sprintf("L%d", line)
 			}(),
-			middleware.NewClientClosedRequestMiddleware(
-				loggerMock{
-					fakeInfo: func(format string, v ...interface{}) {
-						want := `client closed request in GET /:
+			middleware.NewClientClosedRequestMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
+			func() *http.Request {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return httptest.NewRequest("GET", "/", nil).WithContext(client.SetRequestLogger(ctx, client.NewRequestLogger("", loggerMock{
+					fakeInfof: func(format string, v ...interface{}) {
+						stack :=
+							`client closed request in GET /:
     kube-trivy-exporter/pkg/server/middleware.NewClientClosedRequestMiddleware.func1.1.1
-        kube-trivy-exporter@/pkg/server/middleware/client_closed_request.go:53
+        kube-trivy-exporter@/pkg/server/middleware/client_closed_request.go:55
   - context canceled
 `
+						want := fmt.Sprintf(`{"severity":"info","requestID":"","payload":%q}`, stack)
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
-				},
-			)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})),
-			func() *http.Request {
-				ctx, cancel := context.WithCancel(context.Background())
-				cancel()
-				return httptest.NewRequest("GET", "/", nil).WithContext(ctx)
+				})))
 			}(),
 		},
 	}

@@ -1,7 +1,7 @@
 package middleware
 
 type ILogger interface {
-	Error(format string, v ...interface{})
-	Info(format string, v ...interface{})
-	Debug(format string, v ...interface{})
+	Errorf(format string, v ...interface{})
+	Infof(format string, v ...interface{})
+	Debugf(format string, v ...interface{})
 }

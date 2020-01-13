@@ -167,7 +167,7 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
-					fakeError: func(format string, v ...interface{}) {
+					fakeErrorf: func(format string, v ...interface{}) {
 						want := "Failed to get containers: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
@@ -202,7 +202,7 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
-					fakeError: func(format string, v ...interface{}) {
+					fakeErrorf: func(format string, v ...interface{}) {
 						want := "Failed to detect vulnerability at fake: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
@@ -245,7 +245,7 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
-					fakeError: func(format string, v ...interface{}) {
+					fakeErrorf: func(format string, v ...interface{}) {
 						want := "Failed to parse trivy response at fake: invalid character 'k' in literal false (expecting 'l')\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
@@ -288,14 +288,14 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
-					fakeError: func(format string, v ...interface{}) {
+					fakeErrorf: func(format string, v ...interface{}) {
 						want := "panic: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
-					fakeDebug: func(format string, v ...interface{}) {},
+					fakeDebugf: func(format string, v ...interface{}) {},
 				},
 				&kubernetesClientMock{
 					fakeContainers: func() ([]v1.Container, error) {
@@ -324,14 +324,14 @@ func TestTrivyCollectorCollect(t *testing.T) {
 			collector.NewTrivyCollector(
 				context.Background(),
 				loggerMock{
-					fakeError: func(format string, v ...interface{}) {
+					fakeErrorf: func(format string, v ...interface{}) {
 						want := "panic: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
-					fakeDebug: func(format string, v ...interface{}) {},
+					fakeDebugf: func(format string, v ...interface{}) {},
 				},
 				&kubernetesClientMock{
 					fakeContainers: func() ([]v1.Container, error) {

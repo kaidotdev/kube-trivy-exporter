@@ -63,8 +63,8 @@ func (c *TrivyCollector) startLoop(ctx context.Context) {
 	go func(ctx context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				c.logger.Error("panic: %+v\n", err)
-				c.logger.Debug("%s\n", debug.Stack())
+				c.logger.Errorf("panic: %+v\n", err)
+				c.logger.Debugf("%s\n", debug.Stack())
 			}
 		}()
 
@@ -75,7 +75,7 @@ func (c *TrivyCollector) startLoop(ctx context.Context) {
 			case <-t.C:
 				containers, err := c.kubernetesClient.Containers()
 				if err != nil {
-					c.logger.Error("Failed to get containers: %s\n", err.Error())
+					c.logger.Errorf("Failed to get containers: %s\n", err.Error())
 					continue
 				}
 
@@ -92,8 +92,8 @@ func (c *TrivyCollector) startLoop(ctx context.Context) {
 						defer wg.Done()
 						defer func() {
 							if err := recover(); err != nil {
-								c.logger.Error("panic: %+v\n", err)
-								c.logger.Debug("%s\n", debug.Stack())
+								c.logger.Errorf("panic: %+v\n", err)
+								c.logger.Debugf("%s\n", debug.Stack())
 							}
 						}()
 
@@ -103,13 +103,13 @@ func (c *TrivyCollector) startLoop(ctx context.Context) {
 						}()
 						out, err := c.trivyClient.Do(ctx, container.Image)
 						if err != nil {
-							c.logger.Error("Failed to detect vulnerability at %s: %s\n", container.Image, err.Error())
+							c.logger.Errorf("Failed to detect vulnerability at %s: %s\n", container.Image, err.Error())
 							return
 						}
 
 						var responses []client.TrivyResponse
 						if err := json.Unmarshal(out, &responses); err != nil {
-							c.logger.Error("Failed to parse trivy response at %s: %s\n", container.Image, err.Error())
+							c.logger.Errorf("Failed to parse trivy response at %s: %s\n", container.Image, err.Error())
 							return
 						}
 						func() {

@@ -16,6 +16,7 @@ type Args struct {
 	TCPKeepAliveInterval     int64
 	TrivyConcurrency         int64
 	CollectorLoopInterval    int64
+	Verbose                  bool
 }
 
 func DefaultArgs() *Args {
@@ -33,5 +34,6 @@ func DefaultArgs() *Args {
 		TCPKeepAliveInterval:     0,
 		TrivyConcurrency:         10,
 		CollectorLoopInterval:    60,
+		Verbose:                  true,
 	}
 }

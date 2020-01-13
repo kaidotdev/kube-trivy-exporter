@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+	"kube-trivy-exporter/pkg/client"
 	"kube-trivy-exporter/pkg/server/processor"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,31 +15,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type defaultLogger struct {
-	errorLogger *log.Logger
-	infoLogger  *log.Logger
-	debugLogger *log.Logger
-}
-
-func (dl *defaultLogger) Error(format string, v ...interface{}) {
-	dl.errorLogger.Printf(format, v...)
-}
-
-func (dl *defaultLogger) Info(format string, v ...interface{}) {
-	dl.infoLogger.Printf(format, v...)
-}
-
-func (dl *defaultLogger) Debug(format string, v ...interface{}) {
-	dl.debugLogger.Printf(format, v...)
-}
-
 func Run(a *Args) error {
 	i := NewInstance()
-	i.SetLogger(&defaultLogger{
-		errorLogger: log.New(os.Stderr, "[ERROR] ", log.LUTC),
-		infoLogger:  log.New(os.Stdout, "[INFO] ", log.LUTC),
-		debugLogger: log.New(os.Stdout, "[DEBUG] ", log.LUTC),
-	})
+	logger := client.NewStandardLogger(a.Verbose)
+	i.SetLogger(logger)
 
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -89,7 +68,7 @@ func Run(a *Args) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM)
 	<-quit
-	i.logger.Info("Attempt to shutdown instance...\n")
+	i.logger.Infof("Attempt to shutdown instance...\n")
 
 	i.Shutdown(context.Background())
 	return nil

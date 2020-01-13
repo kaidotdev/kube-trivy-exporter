@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"kube-trivy-exporter/pkg/client"
 	"net/http"
 	"net/url"
 
@@ -45,12 +46,13 @@ func (e *ClientClosedRequestError) FormatError(p xerrors.Printer) error {
 	return e.Err
 }
 
-func NewClientClosedRequestMiddleware(logger ILogger) func(http.Handler) http.Handler {
+func NewClientClosedRequestMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := r.Context().Err(); err == context.Canceled {
-					logger.Info("%+v\n", NewClientClosedRequestError(r, err))
+					logger := client.GetRequestLogger(r.Context())
+					logger.Infof("%+v\n", NewClientClosedRequestError(r, err))
 				}
 			}()
 			next.ServeHTTP(w, r)

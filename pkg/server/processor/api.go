@@ -33,8 +33,9 @@ type API struct {
 
 func NewAPI(settings APISettings) (*API, error) {
 	router := mux.NewRouter()
-	router.Use(middleware.NewRecoverMiddleware(settings.Logger))
-	router.Use(middleware.NewClientClosedRequestMiddleware(settings.Logger))
+	router.Use(middleware.NewRequestLoggerMiddleware(settings.Logger))
+	router.Use(middleware.NewRecoverMiddleware())
+	router.Use(middleware.NewClientClosedRequestMiddleware())
 
 	router.Handle(
 		"/health",

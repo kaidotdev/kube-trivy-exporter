@@ -123,6 +123,13 @@ func serverCmd() *cobra.Command {
 		serverArgs.CollectorLoopInterval,
 		"Interval to execute collect result from trivy",
 	)
+	serverCmd.PersistentFlags().BoolVarP(
+		&serverArgs.Verbose,
+		"verbose",
+		"",
+		serverArgs.Verbose,
+		"Verbose logging",
+	)
 
 	if err := viper.BindPFlags(serverCmd.PersistentFlags()); err != nil {
 		log.Fatalf("Failed to execute command: %s\n", err)
