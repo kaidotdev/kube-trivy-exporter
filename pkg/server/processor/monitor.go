@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os/exec"
 	"runtime"
 	"syscall"
 	"time"
@@ -56,20 +55,20 @@ func NewMonitor(settings MonitorSettings) (*Monitor, error) {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
-	registry.MustRegister(collector.NewTrivyCollector(
-		context.Background(),
+	trivyCollector := collector.NewTrivyCollector(
 		settings.Logger,
 		&client.KubernetesClient{
 			Inner: settings.KubernetesClient,
 		},
-		&client.TrivyClient{
-			Executor: func(ctx context.Context, name string, arg ...string) ([]byte, error) {
-				return exec.CommandContext(ctx, name, arg...).CombinedOutput()
-			},
-		},
+		&client.TrivyClient{},
 		settings.TrivyConcurrency,
-		settings.CollectorLoopInterval,
-	))
+	)
+	registry.MustRegister(trivyCollector)
+	ctx := context.Background()
+	if err := trivyCollector.Scan(ctx); err != nil {
+		return nil, xerrors.Errorf("failed to scan of trivy collector: %w", err)
+	}
+	trivyCollector.StartLoop(ctx, settings.CollectorLoopInterval)
 
 	prometheusExporter, err := ocprom.NewExporter(ocprom.Options{Registry: registry})
 	if err != nil {

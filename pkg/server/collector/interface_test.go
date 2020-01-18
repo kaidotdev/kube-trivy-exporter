@@ -61,9 +61,14 @@ func (k *kubernetesClientMock) Containers() ([]v1.Container, error) {
 
 type trivyClientMock struct {
 	collector.ITrivyClient
-	fakeDo func(context.Context, string) ([]byte, error)
+	fakeDo             func(context.Context, string) ([]byte, error)
+	fakeUpdateDatabase func(context.Context) ([]byte, error)
 }
 
 func (t *trivyClientMock) Do(ctx context.Context, image string) ([]byte, error) {
 	return t.fakeDo(ctx, image)
+}
+
+func (t *trivyClientMock) UpdateDatabase(ctx context.Context) ([]byte, error) {
+	return t.fakeUpdateDatabase(ctx)
 }

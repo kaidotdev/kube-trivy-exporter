@@ -30,7 +30,6 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 				return fmt.Sprintf("L%d", line)
 			}(),
 			collector.NewTrivyCollector(
-				context.Background(),
 				loggerMock{},
 				&kubernetesClientMock{
 					fakeContainers: func() ([]v1.Container, error) {
@@ -43,7 +42,6 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 					},
 				},
 				1,
-				10*time.Millisecond,
 			),
 			make(chan *prometheus.Desc, 1),
 			prometheus.NewDesc(
@@ -93,7 +91,6 @@ func TestTrivyCollectorCollect(t *testing.T) {
 				return fmt.Sprintf("L%d", line)
 			}(),
 			collector.NewTrivyCollector(
-				context.Background(),
 				loggerMock{},
 				&kubernetesClientMock{
 					fakeContainers: func() ([]v1.Container, error) {
@@ -105,12 +102,14 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					},
 				},
 				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
 					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						return []byte(`[{"Target":"fake","Vulnerabilities":[{"VulnerabilityID":"fake"}]}]`), nil
 					},
 				},
 				1,
-				10*time.Millisecond,
 			),
 			make(chan prometheus.Metric, 1),
 			func() prometheus.Gauge {
@@ -165,217 +164,22 @@ func TestTrivyCollectorCollect(t *testing.T) {
 				return fmt.Sprintf("L%d", line)
 			}(),
 			collector.NewTrivyCollector(
-				context.Background(),
 				loggerMock{
 					fakeErrorf: func(format string, v ...interface{}) {
-						want := "Failed to get containers: fake\n"
+						want := "Failed to scan: failed to update database: fake\n"
 						got := fmt.Sprintf(format, v...)
 						if diff := cmp.Diff(want, got); diff != "" {
 							t.Errorf("(-want +got):\n%s", diff)
 						}
 					},
 				},
-				&kubernetesClientMock{
-					fakeContainers: func() ([]v1.Container, error) {
-						return nil, errors.New("fake")
-					},
-				},
-				&trivyClientMock{},
-				1,
-				10*time.Millisecond,
-			),
-			func() chan prometheus.Metric {
-				ch := make(chan prometheus.Metric, 1)
-				close(ch)
-				return ch
-			}(),
-			nil,
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			collector.NewTrivyCollector(
-				context.Background(),
-				loggerMock{
-					fakeErrorf: func(format string, v ...interface{}) {
-						want := "Failed to detect vulnerability at fake: fake\n"
-						got := fmt.Sprintf(format, v...)
-						if diff := cmp.Diff(want, got); diff != "" {
-							t.Errorf("(-want +got):\n%s", diff)
-						}
-					},
-				},
-				&kubernetesClientMock{
-					fakeContainers: func() ([]v1.Container, error) {
-						return []v1.Container{
-							{
-								Image: "fake",
-							},
-						}, nil
-					},
-				},
-				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
-						return nil, errors.New("fake")
-					},
-				},
-				1,
-				10*time.Millisecond,
-			),
-			func() chan prometheus.Metric {
-				ch := make(chan prometheus.Metric, 1)
-				close(ch)
-				return ch
-			}(),
-			nil,
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			collector.NewTrivyCollector(
-				context.Background(),
-				loggerMock{
-					fakeErrorf: func(format string, v ...interface{}) {
-						want := "Failed to parse trivy response at fake: invalid character 'k' in literal false (expecting 'l')\n"
-						got := fmt.Sprintf(format, v...)
-						if diff := cmp.Diff(want, got); diff != "" {
-							t.Errorf("(-want +got):\n%s", diff)
-						}
-					},
-				},
-				&kubernetesClientMock{
-					fakeContainers: func() ([]v1.Container, error) {
-						return []v1.Container{
-							{
-								Image: "fake",
-							},
-						}, nil
-					},
-				},
-				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
-						return []byte("fake"), nil
-					},
-				},
-				1,
-				10*time.Millisecond,
-			),
-			func() chan prometheus.Metric {
-				ch := make(chan prometheus.Metric, 1)
-				close(ch)
-				return ch
-			}(),
-			nil,
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			collector.NewTrivyCollector(
-				context.Background(),
-				loggerMock{
-					fakeErrorf: func(format string, v ...interface{}) {
-						want := "panic: fake\n"
-						got := fmt.Sprintf(format, v...)
-						if diff := cmp.Diff(want, got); diff != "" {
-							t.Errorf("(-want +got):\n%s", diff)
-						}
-					},
-					fakeDebugf: func(format string, v ...interface{}) {},
-				},
-				&kubernetesClientMock{
-					fakeContainers: func() ([]v1.Container, error) {
-						panic(errors.New("fake"))
-					},
-				},
-				&trivyClientMock{},
-				1,
-				10*time.Millisecond,
-			),
-			func() chan prometheus.Metric {
-				ch := make(chan prometheus.Metric, 1)
-				close(ch)
-				return ch
-			}(),
-			nil,
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			collector.NewTrivyCollector(
-				context.Background(),
-				loggerMock{
-					fakeErrorf: func(format string, v ...interface{}) {
-						want := "panic: fake\n"
-						got := fmt.Sprintf(format, v...)
-						if diff := cmp.Diff(want, got); diff != "" {
-							t.Errorf("(-want +got):\n%s", diff)
-						}
-					},
-					fakeDebugf: func(format string, v ...interface{}) {},
-				},
-				&kubernetesClientMock{
-					fakeContainers: func() ([]v1.Container, error) {
-						return []v1.Container{
-							{
-								Image: "fake",
-							},
-						}, nil
-					},
-				},
-				&trivyClientMock{
-					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
-						panic(errors.New("fake"))
-					},
-				},
-				1,
-				10*time.Millisecond,
-			),
-			func() chan prometheus.Metric {
-				ch := make(chan prometheus.Metric, 1)
-				close(ch)
-				return ch
-			}(),
-			nil,
-			func(got interface{}) cmp.Option {
-				return nil
-			},
-		},
-		{
-			func() string {
-				_, _, line, _ := runtime.Caller(1)
-				return fmt.Sprintf("L%d", line)
-			}(),
-			collector.NewTrivyCollector(
-				func() context.Context {
-					ctx, cancel := context.WithCancel(context.Background())
-					cancel()
-					return ctx
-				}(),
-				loggerMock{},
 				&kubernetesClientMock{},
-				&trivyClientMock{},
+				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, errors.New("fake")
+					},
+				},
 				1,
-				10*time.Millisecond,
 			),
 			func() chan prometheus.Metric {
 				ch := make(chan prometheus.Metric, 1)
@@ -397,12 +201,167 @@ func TestTrivyCollectorCollect(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			time.Sleep(20 * time.Millisecond)
+			ctx, cancel := context.WithCancel(context.Background())
+			receiver.StartLoop(ctx, 10*time.Millisecond)
+			time.Sleep(30 * time.Millisecond)
 			receiver.Collect(in)
 			got := <-in
-			receiver.Cancel()
+			cancel()
 			if diff := cmp.Diff(want, got, optsFunction(got)); diff != "" {
 				t.Errorf("(-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestTrivyCollectorScan(t *testing.T) {
+	type in struct {
+		first context.Context
+	}
+
+	tests := []struct {
+		name            string
+		receiver        *collector.TrivyCollector
+		in              in
+		wantErrorString string
+	}{
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				loggerMock{},
+				&kubernetesClientMock{},
+				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, errors.New("fake")
+					},
+				},
+				1,
+			),
+			in{
+				context.Background(),
+			},
+			"failed to update database: fake",
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				loggerMock{},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return nil, errors.New("fake")
+					},
+				},
+				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
+				},
+				1,
+			),
+			in{
+				context.Background(),
+			},
+			"failed to get containers: fake",
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				loggerMock{
+					fakeErrorf: func(format string, v ...interface{}) {
+						want := "Failed to detect vulnerability at fake: fake\n"
+						got := fmt.Sprintf(format, v...)
+						if diff := cmp.Diff(want, got); diff != "" {
+							t.Errorf("(-want +got):\n%s", diff)
+						}
+					},
+				},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
+							{
+								Image: "fake",
+							},
+						}, nil
+					},
+				},
+				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return nil, errors.New("fake")
+					},
+				},
+				1,
+			),
+			in{
+				context.Background(),
+			},
+			"",
+		},
+		{
+			func() string {
+				_, _, line, _ := runtime.Caller(1)
+				return fmt.Sprintf("L%d", line)
+			}(),
+			collector.NewTrivyCollector(
+				loggerMock{
+					fakeErrorf: func(format string, v ...interface{}) {
+						want := "Failed to parse trivy response at fake: invalid character 'k' in literal false (expecting 'l')\n"
+						got := fmt.Sprintf(format, v...)
+						if diff := cmp.Diff(want, got); diff != "" {
+							t.Errorf("(-want +got):\n%s", diff)
+						}
+					},
+				},
+				&kubernetesClientMock{
+					fakeContainers: func() ([]v1.Container, error) {
+						return []v1.Container{
+							{
+								Image: "fake",
+							},
+						}, nil
+					},
+				},
+				&trivyClientMock{
+					fakeUpdateDatabase: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
+					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
+						return []byte("fake"), nil
+					},
+				},
+				1,
+			),
+			in{
+				context.Background(),
+			},
+			"",
+		},
+	}
+	for _, tt := range tests {
+		name := tt.name
+		receiver := tt.receiver
+		in := tt.in
+		wantErrorString := tt.wantErrorString
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			err := receiver.Scan(in.first)
+			if err != nil {
+				gotErrorString := err.Error()
+				if diff := cmp.Diff(wantErrorString, gotErrorString); diff != "" {
+					t.Errorf("(-want +got):\n%s", diff)
+				}
 			}
 		})
 	}

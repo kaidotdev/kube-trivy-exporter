@@ -2,17 +2,46 @@ package client
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"strings"
+
+	"golang.org/x/xerrors"
 )
 
-type Executor func(context.Context, string, ...string) ([]byte, error)
+// Hope to implement using github.com/aquasecurity/trivy/pkg
 
-type TrivyClient struct {
-	Executor Executor
-}
+type TrivyClient struct{}
 
 func (c *TrivyClient) Do(ctx context.Context, image string) ([]byte, error) {
-	return c.Executor(ctx, "trivy", "-q", "-f", "json", image)
+	tmpfile, err := ioutil.TempFile("", "*.json")
+	if err != nil {
+		return nil, xerrors.Errorf("failed to create tmpfile: %w", err)
+	}
+	filename := tmpfile.Name()
+
+	defer tmpfile.Close()
+	defer os.Remove(filename)
+
+	result, err := exec.CommandContext(ctx, "trivy", "--skip-update", "--no-progress", "-o", filename, "-f", "json", image).CombinedOutput()
+	if err != nil {
+		i := strings.Index(string(result), "error in image scan")
+		if i == -1 {
+			return nil, xerrors.Errorf("failed to execute trivy: %w", err)
+		} else {
+			return nil, xerrors.Errorf("failed to execute trivy: %s", result[i:len(result)-1])
+		}
+	}
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to read tmpfile: %w", err)
+	}
+	return body, nil
+}
+
+func (c *TrivyClient) UpdateDatabase(ctx context.Context) ([]byte, error) {
+	return exec.CommandContext(ctx, "trivy", "--download-db-only").CombinedOutput()
 }
 
 type TrivyResponse struct {
