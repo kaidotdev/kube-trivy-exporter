@@ -8,7 +8,7 @@ RUN apk add --no-cache $deps
 
 ENV CGO_ENABLED 0
 
-ENV TRIVY_VERSION 0.1.6
+ENV TRIVY_VERSION 0.4.2
 
 RUN curl -sSL https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz | tar -zx -C /tmp
 
