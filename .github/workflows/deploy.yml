@@ -12,6 +12,12 @@ jobs:
         with:
           github_token: ${{ secrets.TOKEN }}
           golangci_lint_flags: "--exclude-use-default=false"
+      - name: kubeval
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: manifests/cluster_role.yaml,manifests/cluster_role_binding.yaml,manifests/pod_disruption_budget.yaml,manifests/service.yaml,manifests/service_account.yaml,manifests/stateful_set.yaml
+          strict: true
+          ignore_missing_schemas: true
   test:
     name: Test
     runs-on: ubuntu-18.04
