@@ -48,6 +48,19 @@ func NewTrivyCollector(
 	}
 }
 
+func uniqueContainerImages(containers []v1.Container) []string {
+	keys := make(map[string]bool)
+	var images []string
+	for _, container := range containers {
+		image := container.Image
+		if _, value := keys[image]; !value {
+			keys[image] = true
+			images = append(images, image)
+		}
+	}
+	return images
+}
+
 func (c *TrivyCollector) Scan(ctx context.Context) error {
 	_, err := c.trivyClient.UpdateDatabase(ctx)
 	if err != nil {
@@ -66,24 +79,24 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 	mutex := &sync.Mutex{}
 
 	var trivyResponses []client.TrivyResponse
-	for _, container := range containers {
+	for _, image := range uniqueContainerImages(containers) {
 		wg.Add(1)
-		go func(container v1.Container) {
+		go func(image string) {
 			defer wg.Done()
 
 			semaphore <- struct{}{}
 			defer func() {
 				<-semaphore
 			}()
-			out, err := c.trivyClient.Do(ctx, container.Image)
+			out, err := c.trivyClient.Do(ctx, image)
 			if err != nil {
-				c.logger.Errorf("Failed to detect vulnerability at %s: %s\n", container.Image, err.Error())
+				c.logger.Errorf("Failed to detect vulnerability at %s: %s\n", image, err.Error())
 				return
 			}
 
 			var responses []client.TrivyResponse
 			if err := json.Unmarshal(out, &responses); err != nil {
-				c.logger.Errorf("Failed to parse trivy response at %s: %s\n", container.Image, err.Error())
+				c.logger.Errorf("Failed to parse trivy response at %s: %s\n", image, err.Error())
 				return
 			}
 			func() {
@@ -91,7 +104,7 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 				defer mutex.Unlock()
 				trivyResponses = append(trivyResponses, responses...)
 			}()
-		}(container)
+		}(image)
 	}
 	wg.Wait()
 
