@@ -10,7 +10,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
-          github_token: ${{ secrets.TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           golangci_lint_flags: "--exclude-use-default=false"
       - name: kubeval
         uses: instrumenta/kubeval-action@master
@@ -53,5 +53,5 @@ jobs:
           IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
           TAG=$(git rev-parse --short HEAD)
           docker build -t $IMAGE_PATH:$TAG .
-          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.TOKEN }}
+          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.GITHUB_TOKEN }}
           docker push $IMAGE_PATH:$TAG

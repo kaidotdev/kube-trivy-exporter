@@ -17,5 +17,5 @@ jobs:
           IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
           TAG=${GITHUB_REF##*/}
           docker build -t $IMAGE_PATH:$TAG .
-          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.TOKEN }}
+          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.GITHUB_TOKEN }}
           docker push $IMAGE_PATH:$TAG
