@@ -4,6 +4,8 @@ FROM golang:1.13-alpine AS builder
 
 ENV deps "git curl"
 
+RUN apk update && apk upgrade
+
 RUN apk add --no-cache $deps
 
 ENV CGO_ENABLED 0
