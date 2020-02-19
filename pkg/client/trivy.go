@@ -44,6 +44,10 @@ func (c *TrivyClient) UpdateDatabase(ctx context.Context) ([]byte, error) {
 	return exec.CommandContext(ctx, "trivy", "--download-db-only").CombinedOutput()
 }
 
+func (c *TrivyClient) ClearCache(ctx context.Context) ([]byte, error) {
+	return exec.CommandContext(ctx, "trivy", "--clear-cache").CombinedOutput()
+}
+
 type TrivyResponse struct {
 	Target          string               `json:"Target"`
 	Vulnerabilities []TrivyVulnerability `json:"Vulnerabilities"`

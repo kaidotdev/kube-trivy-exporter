@@ -62,8 +62,7 @@ func uniqueContainerImages(containers []v1.Container) []string {
 }
 
 func (c *TrivyCollector) Scan(ctx context.Context) error {
-	_, err := c.trivyClient.UpdateDatabase(ctx)
-	if err != nil {
+	if _, err := c.trivyClient.UpdateDatabase(ctx); err != nil {
 		return xerrors.Errorf("failed to update database: %w", err)
 	}
 
@@ -120,6 +119,10 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 			}
 			c.vulnerabilities.WithLabelValues(labels...).Set(1)
 		}
+	}
+
+	if _, err := c.trivyClient.ClearCache(ctx); err != nil {
+		return xerrors.Errorf("failed to clear cache: %w", err)
 	}
 
 	return nil

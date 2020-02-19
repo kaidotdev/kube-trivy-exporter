@@ -19,4 +19,5 @@ type IKubernetesClient interface {
 type ITrivyClient interface {
 	Do(context.Context, string) ([]byte, error)
 	UpdateDatabase(context.Context) ([]byte, error)
+	ClearCache(context.Context) ([]byte, error)
 }

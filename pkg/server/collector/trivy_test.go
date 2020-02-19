@@ -108,6 +108,9 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						return []byte(`[{"Target":"fake","Vulnerabilities":[{"VulnerabilityID":"fake"}]}]`), nil
 					},
+					fakeClearCache: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
 				},
 				1,
 			),
@@ -300,6 +303,9 @@ func TestTrivyCollectorScan(t *testing.T) {
 					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						return nil, errors.New("fake")
 					},
+					fakeClearCache: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
+					},
 				},
 				1,
 			),
@@ -338,6 +344,9 @@ func TestTrivyCollectorScan(t *testing.T) {
 					},
 					fakeDo: func(ctx context.Context, image string) ([]byte, error) {
 						return []byte("fake"), nil
+					},
+					fakeClearCache: func(ctx context.Context) ([]byte, error) {
+						return nil, nil
 					},
 				},
 				1,

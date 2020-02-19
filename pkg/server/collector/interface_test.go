@@ -63,6 +63,7 @@ type trivyClientMock struct {
 	collector.ITrivyClient
 	fakeDo             func(context.Context, string) ([]byte, error)
 	fakeUpdateDatabase func(context.Context) ([]byte, error)
+	fakeClearCache     func(context.Context) ([]byte, error)
 }
 
 func (t *trivyClientMock) Do(ctx context.Context, image string) ([]byte, error) {
@@ -71,4 +72,8 @@ func (t *trivyClientMock) Do(ctx context.Context, image string) ([]byte, error) 
 
 func (t *trivyClientMock) UpdateDatabase(ctx context.Context) ([]byte, error) {
 	return t.fakeUpdateDatabase(ctx)
+}
+
+func (t *trivyClientMock) ClearCache(ctx context.Context) ([]byte, error) {
+	return t.fakeClearCache(ctx)
 }
