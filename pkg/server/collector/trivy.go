@@ -17,10 +17,6 @@ const (
 	namespace = "trivy"
 )
 
-type ITrivyResponseAdapter interface {
-	Request(context.Context) ([]client.TrivyResponse, error)
-}
-
 type TrivyCollector struct {
 	logger           ILogger
 	kubernetesClient IKubernetesClient
