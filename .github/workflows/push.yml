@@ -1,9 +1,38 @@
-name: Release
-on: [release]
+name: Push
+on: [push]
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Go 1.13.8
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.8
+        id: go
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Cache go mod download
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/go/pkg/mod
+          key: ${{ runner.os }}-gomod-${{ hashFiles(format('{0}{1}', github.workspace, '/go.sum')) }}
+          restore-keys: |
+            ${{ runner.os }}-gomod-
+      - name: Cache go build
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles(format('{0}{1}', github.workspace, '/**/*.go')) }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Test
+        run: go test ./... -race -bench . -benchmem -trimpath
+
   publish:
     name: Publish
     runs-on: ubuntu-18.04
+    needs: [test]
     env:
       OWNER: kaidotdev
       REPOSITORY_NAME: kube-trivy-exporter
@@ -12,7 +41,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v1
       - name: Cache docker build
-        id: cache
+        id: docker-cache
         uses: actions/cache@v1
         with:
           path: /home/runner/.cache/docker-build
@@ -27,7 +56,7 @@ jobs:
       - name: Publish
         run: |
           IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
-          TAG=${GITHUB_REF##*/}
+          TAG=$(git rev-parse --short HEAD)
           CACHE_FROM_OPT=''
           [ -d /home/runner/.cache/docker-build ] && CACHE_FROM_OPT='--cache-from type=local,src=/home/runner/.cache/docker-build'
           docker buildx build --output type=docker,name=$IMAGE_PATH:$TAG,push=false $CACHE_FROM_OPT --cache-to type=local,mode=max,dest=/home/runner/.cache/docker-build .

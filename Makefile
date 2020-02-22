@@ -6,7 +6,8 @@ test: ## Test
 
 .PHONY: lint
 lint: ## Lint
-	@go get golang.org/x/tools/cmd/goimports
+	@go get golang.org/x/tools/cmd/goimports@5916a50
+	@go get github.com/instrumenta/kubeval@0.14.0
 	@for d in $(shell go list -f {{.Dir}} ./...); do $(shell go env GOPATH)/bin/goimports -w $$d/*.go; done
 	@docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.21.0 golangci-lint run --fix
 

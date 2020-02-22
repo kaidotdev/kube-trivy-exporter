@@ -1,0 +1,19 @@
+name: PullRequest
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Set up Go 1.13.8
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.8
+        id: go
+      - name: Check out code
+        uses: actions/checkout@v1
+      - name: Lint
+        run: make lint
