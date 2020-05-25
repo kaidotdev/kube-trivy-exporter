@@ -40,7 +40,7 @@ func NewTrivyCollector(
 			Namespace: namespace,
 			Name:      "vulnerabilities",
 			Help:      "Vulnerabilities detected by trivy",
-		}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity"}),
+		}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "fixedVersion"}),
 	}
 }
 
@@ -112,6 +112,7 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 				vulnerability.PkgName,
 				vulnerability.InstalledVersion,
 				vulnerability.Severity,
+				vulnerability.FixedVersion,
 			}
 			c.vulnerabilities.WithLabelValues(labels...).Set(1)
 		}
