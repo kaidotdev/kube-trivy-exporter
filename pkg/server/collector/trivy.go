@@ -40,7 +40,7 @@ func NewTrivyCollector(
 			Namespace: namespace,
 			Name:      "vulnerabilities",
 			Help:      "Vulnerabilities detected by trivy",
-		}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "FixedVersion"}),
+		}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "fixedVersion"}),
 	}
 }
 

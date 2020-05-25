@@ -47,7 +47,7 @@ func TestTrivyCollectorDescribe(t *testing.T) {
 			prometheus.NewDesc(
 				"trivy_vulnerabilities",
 				"Vulnerabilities detected by trivy",
-				[]string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "FixedVersion"},
+				[]string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "fixedVersion"},
 				nil,
 			),
 			func(got interface{}) cmp.Option {
@@ -120,7 +120,7 @@ func TestTrivyCollectorCollect(t *testing.T) {
 					Namespace: "trivy",
 					Name:      "vulnerabilities",
 					Help:      "Vulnerabilities detected by trivy",
-				}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "FixedVersion"})
+				}, []string{"image", "vulnerabilityId", "pkgName", "installedVersion", "severity", "fixedVersion"})
 				labels := []string{
 					"fake",
 					"fake",
