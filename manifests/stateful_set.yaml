@@ -42,7 +42,7 @@ spec:
               weight: 100
       containers:
         - name: kube-trivy-exporter
-          image: docker.pkg.github.com/kaidotdev/kube-trivy-exporter/kube-trivy-exporter:v0.1.2
+          image: docker.pkg.github.com/kaidotdev/kube-trivy-exporter/kube-trivy-exporter:v1.0.2
           imagePullPolicy: Always
           args:
             - server
