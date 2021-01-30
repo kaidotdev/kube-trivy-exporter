@@ -28,6 +28,7 @@ spec:
           #  value: "65535"
           - name: net.ipv4.ip_local_port_range
             value: "10000 65535"
+        fsGroup: 10001
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -42,13 +43,19 @@ spec:
               weight: 100
       containers:
         - name: kube-trivy-exporter
-          image: docker.pkg.github.com/kaidotdev/kube-trivy-exporter/kube-trivy-exporter:v1.1.0
+          image: ghcr.io/chgl/kube-trivy-exporter:update-trivy-run-as-non-root
           imagePullPolicy: Always
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsUser: 10001
+            runAsGroup: 10001
           args:
             - server
             - --api-address=0.0.0.0:8000
             - --monitor-address=0.0.0.0:9090
-            - --enable-tracing
+            # - --enable-tracing
             - --trivy-concurrency=30
             - --collector-loop-interval=3600
           env:
@@ -69,7 +76,7 @@ spec:
             timeoutSeconds: 1
           volumeMounts:
             - name: cache
-              mountPath: /root/.cache/trivy
+              mountPath: /home/kube-trivy-exporter/.cache/trivy
   volumeClaimTemplates:
     - metadata:
         name: cache
