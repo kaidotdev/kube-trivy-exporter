@@ -29,10 +29,14 @@ jobs:
           version: v0.3.1
       - name: Publish
         run: |
-          IMAGE_PATH=docker.pkg.github.com/${OWNER}/${REPOSITORY_NAME}/${IMAGE_NAME}
+          IMAGE_PATH=ghcr.io/${OWNER}/${IMAGE_NAME}
           TAG=${GITHUB_REF##*/}
-          CACHE_FROM_OPT=''
-          [ -d /home/runner/.cache/docker-build ] && CACHE_FROM_OPT='--cache-from type=local,src=/home/runner/.cache/docker-build'
-          docker buildx build --output type=docker,name=$IMAGE_PATH:$TAG,push=false $CACHE_FROM_OPT --cache-to type=local,mode=max,dest=/home/runner/.cache/docker-build .
-          docker login docker.pkg.github.com -u $OWNER -p ${{ secrets.GITHUB_TOKEN }}
+          opt=''
+          if [ -d /home/runner/.cache/docker-build ]; then
+            opt='--cache-from type=local,src=/home/runner/.cache/docker-build'
+          else
+            opt='--cache-from type=registry,ref=$IMAGE_PATH:master'
+          fi
+          docker login ghcr.io -u $OWNER -p ${{ secrets.GITHUB_TOKEN }}
+          docker buildx build --output type=docker,name=$IMAGE_PATH:$TAG,push=false ${opt} --cache-to type=local,mode=max,dest=/home/runner/.cache/docker-build .
           docker push $IMAGE_PATH:$TAG
