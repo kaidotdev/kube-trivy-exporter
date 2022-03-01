@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.13-alpine AS builder
+FROM golang:1.17-alpine AS builder
 
 ENV deps "git curl"
 
@@ -10,7 +10,7 @@ RUN apk add --no-cache $deps
 
 ENV CGO_ENABLED 0
 
-ENV TRIVY_VERSION 0.12.0
+ENV TRIVY_VERSION 0.24.1
 
 RUN curl -sSL https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz | tar -zx -C /tmp
 
@@ -25,7 +25,7 @@ COPY cmd /build/cmd
 COPY pkg /build/pkg
 RUN --mount=type=cache,target=/root/.cache/go-build go build -trimpath -o /usr/local/bin/main -ldflags="-s -w" /build/cmd/main.go
 
-FROM alpine:3.9
+FROM alpine:3
 COPY --from=builder /usr/local/bin/main /usr/local/bin/main
 COPY --from=builder /tmp/trivy /usr/local/bin/trivy
 
