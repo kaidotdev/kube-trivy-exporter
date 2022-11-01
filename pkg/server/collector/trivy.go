@@ -72,8 +72,7 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 
 	wg := sync.WaitGroup{}
 	mutex := &sync.Mutex{}
-
-	var trivyResponses []client.TrivyResponse
+	var trivyResults []client.TrivyResults
 	for _, image := range uniqueContainerImages(containers) {
 		wg.Add(1)
 		go func(image string) {
@@ -89,32 +88,34 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 				return
 			}
 
-			var responses []client.TrivyResponse
-			if err := json.Unmarshal(out, &responses); err != nil {
+			var result client.TrivyResults
+			if err := json.Unmarshal(out, &result); err != nil {
 				c.logger.Errorf("Failed to parse trivy response at %s: %s\n", image, err.Error())
 				return
 			}
 			func() {
 				mutex.Lock()
 				defer mutex.Unlock()
-				trivyResponses = append(trivyResponses, responses...)
+				trivyResults = append(trivyResults, result)
 			}()
 		}(image)
 	}
 	wg.Wait()
 
 	c.vulnerabilities.Reset()
-	for _, trivyResponse := range trivyResponses {
-		for _, vulnerability := range trivyResponse.Vulnerabilities {
-			labels := []string{
-				trivyResponse.ExtractImage(),
-				vulnerability.VulnerabilityID,
-				vulnerability.PkgName,
-				vulnerability.InstalledVersion,
-				vulnerability.Severity,
-				vulnerability.FixedVersion,
+	for _, result := range trivyResults {
+		for _, trivyResponse := range result.Results {
+			for _, vulnerability := range trivyResponse.Vulnerabilities {
+				labels := []string{
+					trivyResponse.ExtractImage(),
+					vulnerability.VulnerabilityID,
+					vulnerability.PkgName,
+					vulnerability.InstalledVersion,
+					vulnerability.Severity,
+					vulnerability.FixedVersion,
+				}
+				c.vulnerabilities.WithLabelValues(labels...).Set(1)
 			}
-			c.vulnerabilities.WithLabelValues(labels...).Set(1)
 		}
 	}
 
