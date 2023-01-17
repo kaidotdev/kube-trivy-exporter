@@ -24,7 +24,7 @@ func (c *TrivyClient) Do(ctx context.Context, image string) ([]byte, error) {
 	defer tmpfile.Close()
 	defer os.Remove(filename)
 
-	result, err := exec.CommandContext(ctx, "trivy","image", "--skip-update", "--no-progress", "-o", filename, "-f", "json", image).CombinedOutput()
+	result, err := exec.CommandContext(ctx, "trivy", "image", "--skip-update", "--no-progress", "-o", filename, "-f", "json", image).CombinedOutput()
 	if err != nil {
 		i := strings.Index(string(result), "error in image scan")
 		if i == -1 {
@@ -46,6 +46,10 @@ func (c *TrivyClient) UpdateDatabase(ctx context.Context) ([]byte, error) {
 
 func (c *TrivyClient) ClearCache(ctx context.Context) ([]byte, error) {
 	return exec.CommandContext(ctx, "trivy", "image", "--clear-cache").CombinedOutput()
+}
+
+type TrivyResults struct {
+	Results []TrivyResponse `json:"Results"`
 }
 
 type TrivyResponse struct {

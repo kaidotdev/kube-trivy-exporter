@@ -89,15 +89,15 @@ func (c *TrivyCollector) Scan(ctx context.Context) error {
 				return
 			}
 
-			var responses []client.TrivyResponse
-			if err := json.Unmarshal(out, &responses); err != nil {
-				c.logger.Errorf("Failed to parse trivy response at %s: %s\n", image, err.Error())
+			var results client.TrivyResults
+			if err := json.Unmarshal(out, &results); err != nil {
+				c.logger.Errorf("Failed to parse trivy response at %s:\n%s\n-> %s\n", image, out, err.Error())
 				return
 			}
 			func() {
 				mutex.Lock()
 				defer mutex.Unlock()
-				trivyResponses = append(trivyResponses, responses...)
+				trivyResponses = append(trivyResponses, results.Results...)
 			}()
 		}(image)
 	}
